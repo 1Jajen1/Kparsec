@@ -22,7 +22,7 @@ repositories {
 apply plugin: 'kotlin-kapt'
 
 group 'kparsec'
-version '0.1'
+version '0.2'
 
 def arrow_version = "0.10.5-SNAPSHOT"
 dependencies {
@@ -94,7 +94,7 @@ publishing {
             }
             groupId 'kparsec'
             artifactId 'kparsec'
-            version '0.1'
+            version '0.2'
             pom.withXml {
                 def root = asNode()
                 root.appendNode('description', 'Kotlin functional parser combinators')
@@ -117,7 +117,7 @@ bintray {
         licenses = ['BSD 3-Clause']
         vcsUrl = 'https://github.com/1Jajen1/kparsec'
         version {
-            name = '0.1'
+            name = '0.2'
             released  = new Date()
         }
     }
