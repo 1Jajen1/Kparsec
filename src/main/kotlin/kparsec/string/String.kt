@@ -7,35 +7,6 @@ import arrow.core.extensions.list.foldable.foldLeft
 import arrow.typeclasses.Eq
 import kparsec.*
 
-interface StringStream : Stream<String, Char, String> {
-    override fun EQCHUNK(): Eq<String> = String.eq()
-    override fun EQEL(): Eq<Char> = Char.eq()
-
-    override fun String.isEmpty(): Boolean = length == 0
-    override fun String.size(): Int = length
-
-    override fun String.take(i: Int): Option<Tuple2<String, String>> = when {
-        i <= 0 -> ("" toT this).some()
-        length == 0 -> None
-        else -> (this.substring(0, i) toT this.substring(i)).some()
-    }
-
-    override fun String.takeOne(): Option<Tuple2<Char, String>> =
-        if (length == 0) None
-        else (first() toT drop(1)).some()
-
-    override fun String.takeWhile(p: (Char) -> Boolean): Tuple2<String, String> =
-        takeWhile_(p).let { match -> (match toT this.substring(match.length)) }
-
-    override fun List<Char>.toChunk(): String = String(toCharArray())
-    override fun String.toTokens(): List<Char> = toCharArray().toList()
-}
-
-fun String.Companion.stream(): Stream<String, Char, String> = object : StringStream {}
-
-private inline fun String.takeWhile_(p: (Char) -> Boolean): String =
-    takeWhile(p)
-
 // combinators
 fun <E, I, CHUNK, M> MonadParsec<E, I, Char, CHUNK, M>.newline(): Kind<M, Char> =
     char('\n').label("newline")
