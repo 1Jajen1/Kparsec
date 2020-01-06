@@ -30,13 +30,15 @@ interface Stream<S, EL, CHUNK> {
     fun reachOffset(off: Int, init: PosState<S>): Tuple2<String, PosState<S>>
     fun reachOffsetNoNewline(off: Int, init: PosState<S>): PosState<S> = reachOffset(off, init).b
 
-    fun List<EL>.show(): String
-    fun List<EL>.tokenLength(): Int = size
+    fun Nel<EL>.show(): String
+    fun Nel<EL>.tokenLength(): Int = size
 }
 
 fun <S, EL, CHUNK> Stream<S, EL, CHUNK>.reachOffset(
     splitAt: (Int, S) -> Tuple2<CHUNK, S>,
     fold: ((Any?, EL) -> Any?, Any?, CHUNK) -> Any?,
+    fromTokens: CHUNK.() -> String,
+    fromToken: EL.() -> Char,
     newline: EL, tab: EL,
     offset: Int,
     initial: PosState<S>
@@ -51,8 +53,8 @@ fun <S, EL, CHUNK> Stream<S, EL, CHUNK>.reachOffset(
                     sp.name,
                     sp.line,
                     sp.column + initial.tabWidth - (sp.column - 1).rem(initial.tabWidth)
-                ) toT str + listOf(el).show()
-            else SourcePos(sp.name, sp.line, sp.column + 1) toT str + listOf(el).show()
+                ) toT str + Nel(el).show()
+            else SourcePos(sp.name, sp.line, sp.column + 1) toT str + el.fromToken()
         }
     }, (initial.sourcePos toT ""), pre) as Tuple2<SourcePos, String>
     val sameLine = spos.line == initial.sourcePos.line
@@ -60,8 +62,7 @@ fun <S, EL, CHUNK> Stream<S, EL, CHUNK>.reachOffset(
 
     val strRes = addPrefix(
         str + post.takeWhile { EQEL().run { it.neqv(newline) } }.a
-            .toTokens()
-            .show()
+            .fromTokens()
     ).expandTab(initial.tabWidth)
 
     val posRes = PosState(
@@ -127,13 +128,17 @@ interface StringStream : Stream<String, Char, String> {
     override fun List<Char>.toChunk(): String = String(toCharArray())
     override fun String.toTokens(): List<Char> = toCharArray().toList()
 
-    override fun List<Char>.show(): String = joinToString("")
+    override fun Nel<Char>.show(): String = if (tail.isEmpty()) prettyChar(head).fold({ "'${head}'" }, ::identity) else
+        if (tail.size == 1 && head == '\r' && tail.first() == '\n') "crlf newline"
+        else "\"" + all.joinToString("") {
+            prettyChar(it).fold({ "$it" }, { "<$it>" })
+        } + "\""
 
     override fun reachOffset(off: Int, init: PosState<String>): Tuple2<String, PosState<String>> =
         reachOffset({ n, i ->
             if (n < 0) "" toT i
             else i.substring(0, n) toT i.substring(n)
-        }, { f, n, s -> s.fold(n, f) }, '\n', '\t', off, init)
+        }, { f, n, s -> s.fold(n, f) }, { this }, { this }, '\n', '\t', off, init)
 
     override fun reachOffsetNoNewline(off: Int, init: PosState<String>): PosState<String> =
         reachOffsetNoNewline({ n, i ->
@@ -146,3 +151,42 @@ fun String.Companion.stream(): Stream<String, Char, String> = object : StringStr
 
 private inline fun String.takeWhile_(p: (Char) -> Boolean): String =
     takeWhile(p)
+
+fun prettyChar(c: Char): Option<String> = when (c) {
+    ' ' -> "space".some()
+    '\u0000' -> "null".some()
+    '\u0001' -> "start of heading".some()
+    '\u0002' -> "start of text".some()
+    '\u0003' -> "end of text".some()
+    '\u0004' -> "end of transmission".some()
+    '\u0005' -> "enquiry".some()
+    '\u0006' -> "acknowledge".some()
+    '\u0007' -> "bell".some()
+    '\b' -> "backspace".some()
+    '\t' -> "tab".some()
+    '\n' -> "newline".some()
+    '\u000B' -> "vertical tab".some()
+    '\u000C' -> "form feed".some()
+    '\r' -> "carriage return".some()
+    '\u000E' -> "shift out".some()
+    '\u000F' -> "shift in".some()
+    '\u0010' -> "data link escape".some()
+    '\u0011' -> "device control 1".some()
+    '\u0012' -> "device control 2".some()
+    '\u0013' -> "device control 3".some()
+    '\u0014' -> "device control 4".some()
+    '\u0015' -> "negative acknowledge".some()
+    '\u0016' -> "synchronous idle".some()
+    '\u0017' -> "end of transmission block".some()
+    '\u0018' -> "cancel".some()
+    '\u0019' -> "end of medium".some()
+    '\u001A' -> "substitute".some()
+    '\u001B' -> "escape".some()
+    '\u001C' -> "file separator".some()
+    '\u001D' -> "group separator".some()
+    '\u001E' -> "record separator".some()
+    '\u001F' -> "unit separator".some()
+    '\u007F' -> "delete".some()
+    '\u00A0' -> "non-breaking space".some()
+    else -> None
+}

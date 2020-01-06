@@ -71,7 +71,7 @@ sealed class ErrorItem<out T> {
 }
 
 fun <S, T, CHUNK> ErrorItem<T>.length(SI: Stream<S, T, CHUNK>): Int = when (this) {
-    is ErrorItem.Tokens -> SI.run { ts.all.tokenLength() }
+    is ErrorItem.Tokens -> SI.run { ts.tokenLength() }
     else -> 1
 }
 
@@ -126,7 +126,7 @@ fun <E, EL, I, CHUNK> ParseErrorBundle<E, I, EL>.renderPretty(SI: Stream<I, EL, 
         if (doc.unDoc.value() is DocF.Nil) chunk toT pst
         else (doc + hardLine() + chunk) toT pst
     }.a
-        .renderPretty().renderString()
+        .layoutPretty(PageWidth.Available(120, 0.5f)).renderString()
 
 fun <E, EL, I, CHUNK> ParsecError<E, EL>.errorDoc(SI: Stream<I, EL, CHUNK>, renderE: (E) -> Doc<Nothing> = { it.toString().text() }): Doc<Nothing> =
     "offset=".text() spaced offset().doc() + hardLine() + errorText(SI, renderE)
@@ -140,7 +140,7 @@ fun <E, EL, I, CHUNK> ParsecError<E, EL>.errorText(SI: Stream<I, EL, CHUNK>, ren
 }
 
 fun <S, EL, CHUNK> ErrorItem<EL>.showPretty(SI: Stream<S, EL, CHUNK>): Doc<Nothing> = when (this) {
-    is ErrorItem.Tokens -> SI.run { ts.all.show().text() }
+    is ErrorItem.Tokens -> SI.run { ts.show().text() }
     is ErrorItem.Label -> ts.text()
     is ErrorItem.EndOfInput -> "end of input".text()
 }
