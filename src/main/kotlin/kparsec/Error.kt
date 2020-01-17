@@ -3,6 +3,8 @@ package kparsec
 import arrow.core.*
 import arrow.core.extensions.list.foldable.foldLeft
 import pretty.*
+import pretty.symbols.colon
+import pretty.symbols.pipe
 
 sealed class ParsecError<out E, out T> {
     data class Trivial<T>(
@@ -105,7 +107,7 @@ fun <E, I, T> Nel<ParsecError<E, T>>.toBundle(s: State<I, E, T>): ParseErrorBund
     )
 
 fun <E, EL, I, CHUNK> ParseErrorBundle<E, I, EL>.renderPretty(SI: Stream<I, EL, CHUNK>, renderE: (E) -> Doc<Nothing> = { it.toString().text() }): String =
-    bundleErrors.foldLeft(nil() toT bundlePosState) { (doc, pos), v ->
+    bundleErrors.foldLeft(emptyList<Doc<Nothing>>() toT bundlePosState) { (xs, pos), v ->
         val (sline, pst) = SI.reachOffset(v.offset(), pos)
         val epos = pst.sourcePos
         val lineNr = epos.line.toString()
@@ -123,9 +125,8 @@ fun <E, EL, I, CHUNK> ParseErrorBundle<E, I, EL>.renderPretty(SI: Stream<I, EL, 
                 padding + pipe() spaced rPadding + pointer + hardLine() +
                 v.errorText(SI, renderE)
 
-        if (doc.unDoc.value() is DocF.Nil) chunk toT pst
-        else (doc + hardLine() + chunk) toT pst
-    }.a
+        xs + listOf(chunk) toT pst
+    }.a.vCat()
         .layoutPretty(PageWidth.Available(120, 0.5f)).renderString()
 
 fun <E, EL, I, CHUNK> ParsecError<E, EL>.errorDoc(SI: Stream<I, EL, CHUNK>, renderE: (E) -> Doc<Nothing> = { it.toString().text() }): Doc<Nothing> =
@@ -133,8 +134,8 @@ fun <E, EL, I, CHUNK> ParsecError<E, EL>.errorDoc(SI: Stream<I, EL, CHUNK>, rend
 
 fun <E, EL, I, CHUNK> ParsecError<E, EL>.errorText(SI: Stream<I, EL, CHUNK>, renderE: (E) -> Doc<Nothing> = { it.toString().text() }): Doc<Nothing> = when (this) {
     is ParsecError.Trivial -> if (unexpectedTokens.isEmpty() && expectedTokens.isEmpty()) "unknown parse error".text() else
-        "unexpected".text() spaced unexpectedTokens.fold({ nil() }, { t -> t.showPretty(SI) }) + hardLine() +
-                "expecting".text() softLine expectedTokens.toList().map { it.showPretty(SI) }.encloseSep(nil(), nil(), " or ".text())
+        ("unexpected:".text() softLine unexpectedTokens.fold({ nil() }, { t -> t.showPretty(SI) })).hang(4) + hardLine() +
+                ("expecting:".text() softLine expectedTokens.toList().map { it.showPretty(SI) }.punctuate(" or ".text().flatAlt(" or".text())).sep()).hang(4)
     is ParsecError.Fancy -> if (errors.isEmpty()) "unknown fancy parse error".text() else
         errors.toList().map(renderE).vCat()
 }

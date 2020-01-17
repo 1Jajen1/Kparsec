@@ -15,7 +15,7 @@ fun <E, I, CHUNK, M> MonadParsec<E, I, Char, CHUNK, M>.crlf(): Kind<M, CHUNK> =
     string(SI().run { listOf('\r', '\n').toChunk() })
 
 fun <E, I, CHUNK, M> MonadParsec<E, I, Char, CHUNK, M>.eol(): Kind<M, CHUNK> =
-    newline().map { SI().run { listOf(it).toChunk() } }.orElse(crlf())
+    newline().map { SI().run { it.toChunk() } }.orElse(crlf())
         .label("end of line")
 
 fun <E, I, CHUNK, M> MonadParsec<E, I, Char, CHUNK, M>.tab(): Kind<M, Char> =

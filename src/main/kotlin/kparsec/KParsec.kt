@@ -608,6 +608,8 @@ interface KParsecTMonadParsec<E, I, EL, CHUNK, M> : MonadParsec<E, I, EL, CHUNK,
 interface MonadParsec<E, I, EL, CHUNK, M> : MonadError<M, ParsecError<E, EL>>, Alternative<M> {
     fun SI(): Stream<I, EL, CHUNK>
 
+    fun <A> fx(f: suspend MonadSyntax<M>.() -> A): Kind<M, A> = fx.monad(f)
+
     fun <A> parseError(e: ParsecError<E, EL>): Kind<M, A>
 
     fun <A> Kind<M, A>.label(str: String): Kind<M, A>
@@ -654,8 +656,6 @@ interface MonadParsec<E, I, EL, CHUNK, M> : MonadError<M, ParsecError<E, EL>>, A
         updateParserState { st.copy(posState = pst) }.bind()
         pst.sourcePos
     }
-
-    fun <A> Kind<M, A>.optional(): Kind<M, Option<A>> = map { it.some() }.orElse(just(None))
 
     fun <A> Kind<M, A>.region(f: (ParsecError<E, EL>) -> ParsecError<E, EL>): Kind<M, A> = fx.monad {
         val deSoFar = getParserState().map { it.parseErrors }.bind()

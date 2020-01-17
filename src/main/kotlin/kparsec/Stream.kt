@@ -11,7 +11,6 @@ import kotlin.math.max
  * S is the input type
  * EL a single element of the stream
  * CHUNK a single chunk of the stream
- * TODO List<EL> -> String with pretty printing chars
  */
 interface Stream<S, EL, CHUNK> {
     fun EQEL(): Eq<EL>
@@ -24,6 +23,7 @@ interface Stream<S, EL, CHUNK> {
     fun CHUNK.isEmpty(): Boolean
     fun CHUNK.size(): Int
 
+    fun EL.toChunk(): CHUNK
     fun List<EL>.toChunk(): CHUNK
     fun CHUNK.toTokens(): List<EL>
 
@@ -47,7 +47,7 @@ fun <S, EL, CHUNK> Stream<S, EL, CHUNK>.reachOffset(
     val (spos, str) = fold({ acc, el ->
         val (sp, str) = acc as Tuple2<SourcePos, String>
         EQEL().run {
-            if (el.eqv(newline)) SourcePos(sp.name, sp.line + 1, sp.column + 1) toT str
+            if (el.eqv(newline)) SourcePos(sp.name, sp.line + 1, 1) toT ""
             else if (el.eqv(tab))
                 SourcePos(
                     sp.name,
@@ -85,7 +85,7 @@ fun <S, EL, CHUNK> Stream<S, EL, CHUNK>.reachOffsetNoNewline(
     val spos = fold({ sp, el ->
         sp as SourcePos
         EQEL().run {
-            if (el.eqv(newline)) SourcePos(sp.name, sp.line + 1, sp.column + 1)
+            if (el.eqv(newline)) SourcePos(sp.name, sp.line + 1, 1)
             else if (el.eqv(tab))
                 SourcePos(
                     sp.name,
@@ -115,7 +115,7 @@ interface StringStream : Stream<String, Char, String> {
     override fun String.take(i: Int): Option<Tuple2<String, String>> = when {
         i <= 0 -> ("" toT this).some()
         length == 0 -> None
-        else -> (this.substring(0, kotlin.math.min(i, length - 1)) toT this.substring(kotlin.math.min(i, length - 1))).some()
+        else -> (this.substring(0, kotlin.math.min(i, length)) toT this.substring(kotlin.math.min(i, length))).some()
     }
 
     override fun String.takeOne(): Option<Tuple2<Char, String>> =
@@ -125,6 +125,7 @@ interface StringStream : Stream<String, Char, String> {
     override fun String.takeWhile(p: (Char) -> Boolean): Tuple2<String, String> =
         takeWhile_(p).let { match -> (match toT this.substring(match.length)) }
 
+    override fun Char.toChunk(): String = "$this"
     override fun List<Char>.toChunk(): String = String(toCharArray())
     override fun String.toTokens(): List<Char> = toCharArray().toList()
 
