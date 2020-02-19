@@ -9,16 +9,27 @@ import pretty.symbols.pipe
 sealed class ParsecError<out E, out T> {
     data class Trivial<T>(
         val offset: Int,
-        val unexpectedTokens: Option<ErrorItem<T>>,
-        val expectedTokens: Set<ErrorItem<T>>
-    ) : ParsecError<Nothing, T>()
+        val unexpectedTokens: Option<ErrorItem<T>> = None,
+        val expectedTokens: Set<ErrorItem<T>> = emptySet()
+    ) : ParsecError<Nothing, T>() {
+        fun setUnexpectedToken(tok: Nel<T>): Trivial<T> = Trivial(offset, ErrorItem.Tokens(tok).some(), expectedTokens)
+        fun setUnexpectedLabel(label: String): Trivial<T> = Trivial(offset, ErrorItem.Label(label).some(), expectedTokens)
+        fun setUnexpectedEndOfFile(): Trivial<T> = Trivial(offset, ErrorItem.EndOfInput.some(), expectedTokens)
 
-    // megaparsec has two more cases of this where one is for fail, which we don't need, and the other
-    //  is for indentation which I may add if requested...
+        fun addExpectedToken(tok: Nel<T>): Trivial<T> = Trivial(offset, unexpectedTokens, expectedTokens.plus(ErrorItem.Tokens(tok)))
+        fun addExpectedTokens(tokens: Set<Nel<T>>): Trivial<T> = Trivial(offset, unexpectedTokens, expectedTokens.plus(tokens.map { ErrorItem.Tokens(it) }))
+        fun addExpectedLabel(label: String): Trivial<T> = Trivial(offset, unexpectedTokens, expectedTokens.plus(ErrorItem.Label(label)))
+        fun addExpectedEndOfFile(): Trivial<T> = Trivial(offset, unexpectedTokens, expectedTokens.plus(ErrorItem.EndOfInput))
+    }
+
+    // megaparsec has two more cases of this where one is for fail, which we don't need, and the other is for indentation which I may add if requested...
     data class Fancy<E>(
         val offset: Int,
-        val errors: Set<E>
-    ) : ParsecError<E, Nothing>()
+        val errors: Set<E> = emptySet()
+    ) : ParsecError<E, Nothing>() {
+        fun addError(e: E): Fancy<E> = Fancy(offset, errors.plus(e))
+        fun addErrors(e: Set<E>): Fancy<E> = Fancy(offset, errors.plus(e))
+    }
 
     fun offset(): Int = when (this) {
         is Trivial -> offset
