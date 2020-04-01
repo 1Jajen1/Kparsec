@@ -15,16 +15,16 @@ plugins {
 
 repositories {
     jcenter()
-    maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local' }
     maven { url 'https://dl.bintray.com/jannis/kotlin-pretty' }
+    maven { url "https://dl.bintray.com/arrow-kt/arrow-kt/" }
 }
 
 apply plugin: 'kotlin-kapt'
 
 group 'kparsec'
-version '0.2.1'
+version '0.2.2'
 
-def arrow_version = "0.10.5-SNAPSHOT"
+def arrow_version = "0.10.5"
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
@@ -34,13 +34,10 @@ dependencies {
     implementation "io.arrow-kt:arrow-free:$arrow_version" // Trampoline for stacksafety tests
     implementation "io.arrow-kt:arrow-syntax:$arrow_version" // helper functions like curried...
 
-    implementation "kotlin-pretty:kotlin-pretty:0.5.0" // pretty printing errors
+    implementation "kotlin-pretty:kotlin-pretty:0.5.2" // pretty printing errors
 
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2") {
         exclude group: "io.arrow-kt"
-    }
-    testImplementation("io.arrow-kt:arrow-test:$arrow_version") { // test helpers and laws
-        exclude group: "io.kotlintest"
     }
 }
 
@@ -94,7 +91,7 @@ publishing {
             }
             groupId 'kparsec'
             artifactId 'kparsec'
-            version '0.2.1'
+            version '0.2.2'
             pom.withXml {
                 def root = asNode()
                 root.appendNode('description', 'Kotlin functional parser combinators')
@@ -117,7 +114,7 @@ bintray {
         licenses = ['BSD 3-Clause']
         vcsUrl = 'https://github.com/1Jajen1/kparsec'
         version {
-            name = '0.2.1'
+            name = '0.2.2'
             released  = new Date()
         }
     }
