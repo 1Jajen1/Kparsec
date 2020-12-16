@@ -22,11 +22,11 @@ fun <E, I, CHUNK, M> MonadParsec<E, I, Char, CHUNK, M>.tab(): Kind<M, Char> =
     char('\t').label("tab")
 
 fun <E, I, CHUNK, M> MonadParsec<E, I, Char, CHUNK, M>.space(): Kind<M, Unit> =
-    takeWhile("white space".some()) { it.isWhitespace() }.unit()
+    takeWhile("white space".some()) { it.isWhitespace() }.void()
 
 
 fun <E, I, CHUNK, M> MonadParsec<E, I, Char, CHUNK, M>.atLeastOneSpace(): Kind<M, Unit> =
-    takeAtLeastOneWhile("white space".some()) { it.isWhitespace() }.unit()
+    takeAtLeastOneWhile("white space".some()) { it.isWhitespace() }.void()
 
 fun <E, I, CHUNK, M> MonadParsec<E, I, Char, CHUNK, M>.controlChar(): Kind<M, Char> =
     satisfy { it.isISOControl() }.label("control character")
