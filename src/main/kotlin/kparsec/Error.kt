@@ -140,6 +140,8 @@ fun <E, EL, I, CHUNK> ParseErrorBundle<E, I, EL>.renderPretty(SI: Stream<I, EL, 
     }.a.vCat()
         .layoutPretty(PageWidth.Available(120, 0.5f)).renderString()
 
+fun spaces(nr: Int): String = generateSequence { ' ' }.take(nr).joinToString("")
+
 fun <E, EL, I, CHUNK> ParsecError<E, EL>.errorDoc(SI: Stream<I, EL, CHUNK>, renderE: (E) -> Doc<Nothing> = { it.toString().text() }): Doc<Nothing> =
     "offset=".text() spaced offset().doc() + hardLine() + errorText(SI, renderE)
 

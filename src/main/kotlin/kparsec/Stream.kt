@@ -3,7 +3,6 @@ package kparsec
 import arrow.core.*
 import arrow.core.extensions.eq
 import arrow.typeclasses.Eq
-import pretty.spaces
 import kotlin.math.max
 
 // Input typeclass to provide options to implement this for other text types (and streaming text)
